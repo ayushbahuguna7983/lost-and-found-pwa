@@ -115,8 +115,18 @@ export default function ReportItem() {
 
     const imageUrl = await uploadImage();
 
+   // User check & profile auto-upsert (bina unsupported columns ke)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("profiles").upsert({
+        id: user.id,
+        name: formData.contactName  || user.user_metadata?.full_name || "Ayush",
+        email: user.email || ""
+      }, { onConflict: "id" });
+    }
     const { error } = await supabase.from("items").insert([
       {
+        user_id: user?.id,
         type: formData.type,
         name: capitalizeFirstLetter(formData.name),
         location: formData.location,
